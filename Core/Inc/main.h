@@ -53,10 +53,22 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void switching(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define LB_Pin GPIO_PIN_1
+#define LB_GPIO_Port GPIOB
+#define HB_Pin GPIO_PIN_2
+#define HB_GPIO_Port GPIOB
+#define LC_Pin GPIO_PIN_6
+#define LC_GPIO_Port GPIOC
+#define HC_Pin GPIO_PIN_8
+#define HC_GPIO_Port GPIOC
+#define LA_Pin GPIO_PIN_11
+#define LA_GPIO_Port GPIOA
+#define HA_Pin GPIO_PIN_12
+#define HA_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
