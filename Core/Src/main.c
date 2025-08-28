@@ -147,10 +147,15 @@ int main(void)
   MX_FDCAN2_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim6);
+  
+
+  DRV8320_SetEnable();
+  HAL_Delay(10);
   DRV8320S_Init();
   DRV8320S_GetStatus();
   DRV8320S_clearFault();
+
+  HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
