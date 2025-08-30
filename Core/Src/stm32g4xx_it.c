@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "DRV8320S.h"
+#include "MotorControl.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,7 +43,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+volatile uint8_t MotorControlStatus=0;
+volatile uint8_t BtnActivation=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,6 +60,7 @@
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim6;
 extern DMA_HandleTypeDef hdma_usart2_tx;
+extern DMA_HandleTypeDef hdma_usart2_rx;
 extern UART_HandleTypeDef huart2;
 /* USER CODE BEGIN EV */
 
@@ -230,6 +233,20 @@ void DMA1_Channel1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 channel2 global interrupt.
+  */
+void DMA1_Channel2_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel2_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel2_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+  /* USER CODE BEGIN DMA1_Channel2_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel2_IRQn 1 */
+}
+
+/**
   * @brief This function handles USART2 global interrupt / USART2 wake-up interrupt through EXTI line 26.
   */
 void USART2_IRQHandler(void)
@@ -244,6 +261,21 @@ void USART2_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles EXTI line[15:10] interrupts.
+  */
+void EXTI15_10_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
+
+  /* USER CODE END EXTI15_10_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
+  MotorControlStatus=!MotorControlStatus;
+  BtnActivation=1;
+  /* USER CODE END EXTI15_10_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM6 global interrupt, DAC1 and DAC3 channel underrun error interrupts.
   */
 void TIM6_DAC_IRQHandler(void)
@@ -254,7 +286,7 @@ void TIM6_DAC_IRQHandler(void)
   HAL_TIM_IRQHandler(&htim6);
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
   // six step switching , fixed frequency for now 
-  switching();
+  MotorSixStepSwitch();
   /* USER CODE END TIM6_DAC_IRQn 1 */
 }
 

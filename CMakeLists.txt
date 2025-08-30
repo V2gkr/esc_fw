@@ -47,6 +47,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     ${CMAKE_SOURCE_DIR}/Drivers/DRV8320S_driver/DRV8320S.c #eto rabotalo
     ${CMAKE_SOURCE_DIR}/Drivers/DRV8320S_driver/BSP_stm32g4_cmsis/BSP_DRV8320.c
+    ${CMAKE_SOURCE_DIR}/Drivers/UartComm/UartComm.c
+    ${CMAKE_SOURCE_DIR}/Drivers/MotorControl/MotorControl.c
 )
 
 # Add include paths
@@ -54,6 +56,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     ${CMAKE_SOURCE_DIR}/Drivers/DRV8320S_driver #eto rabotalo
     ${CMAKE_SOURCE_DIR}/Drivers/DRV8320S_driver/BSP_stm32g4_cmsis #eto rabotalo
+    ${CMAKE_SOURCE_DIR}/Drivers/UartComm
+    ${CMAKE_SOURCE_DIR}/Drivers/MotorControl
 )
 
 # Add project symbols (macros)

@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "DRV8320S.h"
+#include "UartComm.h"
+#include "MotorControl.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,9 +50,11 @@ TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
+DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
-
+extern uint8_t MotorControlStatus;
+extern uint8_t BtnActivation;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,52 +68,15 @@ static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 
-volatile uint8_t bldc_count=0;
-void switching(void){
-	switch(bldc_count){
-		case 0:
-			GPIOA->BSRR=GPIO_BSRR_BS11|GPIO_BSRR_BR12;
-			GPIOB->BSRR=GPIO_BSRR_BR1|GPIO_BSRR_BS2;
-			GPIOC->BSRR=GPIO_BSRR_BR_6|GPIO_BSRR_BR_8;
-			bldc_count++;
-		break;
-		case 1:
-			GPIOA->BSRR=GPIO_BSRR_BS11|GPIO_BSRR_BR12;
-			GPIOB->BSRR=GPIO_BSRR_BR1|GPIO_BSRR_BR2;
-			GPIOC->BSRR=GPIO_BSRR_BR_6|GPIO_BSRR_BS_8;
-			bldc_count++;
-			break;
-		case 2:
-			GPIOA->BSRR=GPIO_BSRR_BR11|GPIO_BSRR_BR12;
-			GPIOB->BSRR=GPIO_BSRR_BS1|GPIO_BSRR_BR2;
-			GPIOC->BSRR=GPIO_BSRR_BR_6|GPIO_BSRR_BS_8;
-			bldc_count++;
-			break;
-		case 3:
-			GPIOA->BSRR=GPIO_BSRR_BR11|GPIO_BSRR_BS12;
-			GPIOB->BSRR=GPIO_BSRR_BS1|GPIO_BSRR_BR2;
-			GPIOC->BSRR=GPIO_BSRR_BR_6|GPIO_BSRR_BR_8;
-			bldc_count++;
-			break;
-		case 4:
-			GPIOA->BSRR=GPIO_BSRR_BR11|GPIO_BSRR_BS12;
-			GPIOB->BSRR=GPIO_BSRR_BR1|GPIO_BSRR_BR2;
-			GPIOC->BSRR=GPIO_BSRR_BS_6|GPIO_BSRR_BR_8;
-			bldc_count++;
-			break;
-		case 5:
-			GPIOA->BSRR=GPIO_BSRR_BR11|GPIO_BSRR_BR12;
-			GPIOB->BSRR=GPIO_BSRR_BR1|GPIO_BSRR_BS2;
-			GPIOC->BSRR=GPIO_BSRR_BS_6|GPIO_BSRR_BR_8;
-			bldc_count=0;
-			break;
-	}
-}
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
+  UartCommCallback(Size);
+}
 /* USER CODE END 0 */
 
 /**
@@ -147,15 +114,15 @@ int main(void)
   MX_FDCAN2_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  
+  UartCommInit();
 
   DRV8320_SetEnable();
+  /* for initialization only */
   HAL_Delay(10);
   DRV8320S_Init();
   DRV8320S_GetStatus();
   DRV8320S_clearFault();
-
-  HAL_TIM_Base_Start_IT(&htim6);
+  DRV8320_ResetEnable();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -164,7 +131,16 @@ int main(void)
   {
     //DRV8320S_GetStatus();
     if(DRV8320_IsFaultDetected()){
+      DRV8320S_GetStatus();
       DRV8320S_clearFault();
+    }
+    UartCommService();
+    if(BtnActivation){
+      BtnActivation=0;
+      if(MotorControlStatus)
+        MotorTurnOn();
+      else
+        MotorTurnOff();
     }
     /* USER CODE END WHILE */
 
@@ -402,6 +378,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  /* DMA1_Channel2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
 
 }
 
@@ -418,10 +397,10 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1|LA_Pin|HA_Pin, GPIO_PIN_RESET);
@@ -431,6 +410,12 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, LC_Pin|HC_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PC13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
@@ -462,6 +447,9 @@ static void MX_GPIO_Init(void)
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
