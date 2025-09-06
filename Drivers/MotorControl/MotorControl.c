@@ -1,8 +1,21 @@
 #include "main.h"
 #include "DRV8320S.h"
+#include "MotorControl.h"
+#include "MotorConfig.h"
 volatile uint8_t bldc_count=0;
 
 extern TIM_HandleTypeDef htim6;
+extern ADC_HandleTypeDef hadc2;
+
+MotorControlParameterStruct MotorControlParameters={0};
+
+uint16_t AdcDmaData=0;
+
+
+
+void MotorControlInit(void){
+  MotorControlParameters.RPM=MotorCalculateNewRPM(SIX_STEP_FREQ);
+}
 
 void MotorSixStepSwitch(void){
 	switch(bldc_count){
@@ -48,9 +61,16 @@ void MotorSixStepSwitch(void){
 void MotorTurnOn(void){
   DRV8320_SetEnable();
   HAL_TIM_Base_Start_IT(&htim6);
+  HAL_ADC_Start_DMA(&hadc2,(uint32_t*)&AdcDmaData,1);
 }
 
 void MotorTurnOff(void){
   DRV8320_ResetEnable();
   HAL_TIM_Base_Stop_IT(&htim6);
+  HAL_ADC_Stop_DMA(&hadc2);
+}
+
+/* new value is a value inside ARR register*/
+float MotorCalculateNewRPM(uint16_t new_value){
+  return (float)(new_value/(MOTOR_POLE_PAIR*6.0f))*60;
 }
