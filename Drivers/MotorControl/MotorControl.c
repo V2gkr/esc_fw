@@ -14,7 +14,7 @@ uint16_t AdcDmaData=0;
 
 
 void MotorControlInit(void){
-  MotorControlParameters.RPM=MotorCalculateNewRPM(SIX_STEP_FREQ);
+  MotorControlParameters.RPM_reference=MotorCalculateNewRPM(SIX_STEP_FREQ);
 }
 
 void MotorSixStepSwitch(void){
@@ -73,4 +73,10 @@ void MotorTurnOff(void){
 /* new value is a value inside ARR register*/
 float MotorCalculateNewRPM(uint16_t new_value){
   return (float)(new_value/(MOTOR_POLE_PAIR*6.0f))*60;
+}
+
+void MotorCalculateRotationSpeed(uint32_t time){
+  /* time is ccr1 register which is in a units of prescaler*/
+  float ftime=(float)time/HALL_CLOCK;
+  MotorControlParameters.RPM_measured=(float)60/(MOTOR_POLE_PAIR*ftime);
 }

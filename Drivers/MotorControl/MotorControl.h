@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 typedef struct{
-  float RPM;
+  float RPM_reference;
+  float RPM_measured;
 }MotorControlParameterStruct;
 
 
@@ -15,4 +16,6 @@ void MotorTurnOn(void);
 void MotorTurnOff(void);
 
 float MotorCalculateNewRPM(uint16_t new_value);
+
+void MotorCalculateRotationSpeed(uint32_t time);
 #endif
