@@ -90,7 +90,10 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-  
+  if(htim->Instance==TIM6){
+    MotorGetActualHallState();
+    MotorCalculateNewHallState();
+  }
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {

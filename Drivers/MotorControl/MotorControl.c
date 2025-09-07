@@ -11,7 +11,14 @@ MotorControlParameterStruct MotorControlParameters={0};
 
 uint16_t AdcDmaData=0;
 
-
+typedef enum{
+  HALL_STATE_1=0b101,
+  HALL_STATE_2=0b100,
+  HALL_STATE_3=0b110,
+  HALL_STATE_4=0b010,
+  HALL_STATE_5=0b011,
+  HALL_STATE_6=0b001
+}HallStates;
 
 void MotorControlInit(void){
   MotorControlParameters.RPM_reference=MotorCalculateNewRPM(SIX_STEP_FREQ);
@@ -79,4 +86,67 @@ void MotorCalculateRotationSpeed(uint32_t time){
   /* time is ccr1 register which is in a units of prescaler*/
   float ftime=(float)time/HALL_CLOCK;
   MotorControlParameters.RPM_measured=(float)60/(MOTOR_POLE_PAIR*ftime);
+}
+
+void MotorGetActualHallState(void){
+  /* pa5 - tim2 ch1 a), pb3 - tim2 ch2(b) , pb10 - tim2 ch3 (c)*/
+  MotorControlParameters.HallState=(((GPIOA->IDR&GPIO_PIN_5)>>5)<<2)
+                                    |(((GPIOB->IDR&GPIO_PIN_3)>>3)<<1)
+                                    |(((GPIOB->IDR&GPIO_PIN_10)>>10));
+}
+
+void MotorCalculateNewHallState(void){
+  switch(MotorControlParameters.HallState){
+    case HALL_STATE_1:
+      if(MotorControlParameters.PrevHallState==HALL_STATE_6){
+        MotorControlParameters.Direction=1;
+      }
+      else if(MotorControlParameters.PrevHallState==HALL_STATE_2){
+        MotorControlParameters.Direction=0;
+      }
+      break;
+    case HALL_STATE_2:
+      if(MotorControlParameters.PrevHallState==HALL_STATE_1){
+        MotorControlParameters.Direction=1;
+      }
+      else if(MotorControlParameters.PrevHallState==HALL_STATE_3){
+        MotorControlParameters.Direction=0;
+      }
+      break;
+    case HALL_STATE_3:
+      if(MotorControlParameters.PrevHallState==HALL_STATE_2){
+        MotorControlParameters.Direction=1;
+      }
+      else if(MotorControlParameters.PrevHallState==HALL_STATE_4){
+        MotorControlParameters.Direction=0;
+      }
+      break;
+    case HALL_STATE_4:
+      if(MotorControlParameters.PrevHallState==HALL_STATE_3){
+        MotorControlParameters.Direction=1;
+      }
+      else if(MotorControlParameters.PrevHallState==HALL_STATE_5){
+        MotorControlParameters.Direction=0;
+      }
+      break;
+    case HALL_STATE_5:
+      if(MotorControlParameters.PrevHallState==HALL_STATE_4){
+        MotorControlParameters.Direction=1;
+      }
+      else if(MotorControlParameters.PrevHallState==HALL_STATE_6){
+        MotorControlParameters.Direction=0;
+      }
+      break;
+    case HALL_STATE_6:
+      if(MotorControlParameters.PrevHallState==HALL_STATE_5){
+        MotorControlParameters.Direction=1;
+      }
+      else if(MotorControlParameters.PrevHallState==HALL_STATE_1){
+        MotorControlParameters.Direction=0;
+      }
+      break;
+    default:
+      break;
+  }
+  MotorControlParameters.PrevHallState=MotorControlParameters.HallState;
 }
