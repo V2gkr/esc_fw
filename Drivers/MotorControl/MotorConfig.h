@@ -22,7 +22,13 @@
 
 #define HCLK_CLOCK          160000000
 #define HALL_PRESCALER      1599
-#define HALL_CLOCK          (HCLK_CLOCK/(HALL_PRESCALER+1))
+#define HALL_CLOCK          (HCLK_CLOCK)
 
+#define PHASE_SHIFT_30      (int16_t)(65536/12)
+#define PHASE_SHIFT_60      (int16_t)(65536/6)
+#define PHASE_SHIFT_90      (int16_t)(65536/4)
+#define PHASE_SHIFT_120     (int16_t)(65536/3)
 
+#define TIMER_FREQ          16000
+#define TIMER_PERIOD        ((HCLK_CLOCK/(TIMER_FREQ*2))-1) /* x2 because center aligned mode*/
 #endif

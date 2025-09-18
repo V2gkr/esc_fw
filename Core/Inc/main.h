@@ -59,6 +59,8 @@ void switching(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define irq_dbg_Pin GPIO_PIN_0
+#define irq_dbg_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
